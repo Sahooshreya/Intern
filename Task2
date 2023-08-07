@@ -1,46 +1,31 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from keras.datasets import mnist
-from keras.models import Sequential
-from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
-from keras.utils import to_categorical
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
-# Step 1: Load and Preprocess the Data
-(X_train, y_train), (X_test, y_test) = mnist.load_data()
+data = pd.DataFrame({
+    'socio_economic_status': ['high', 'medium', 'low', 'high', 'medium'],
+    'age': [30, 40, 25, 50, 35],
+    'gender': ['female', 'male', 'male', 'female', 'male'],
+    'outcome': [1, 0, 1, 0, 1]
+})
 
-# Reshape the data to fit the input shape of the model
-X_train = X_train.reshape(X_train.shape[0], 28, 28, 1)
-X_test = X_test.reshape(X_test.shape[0], 28, 28, 1)
+X = data.drop('outcome', axis=1)  # Features
+y = data['outcome']  # Target variable
 
-# Normalize pixel values to range between 0 and 1
-X_train = X_train.astype('float32') / 255
-X_test = X_test.astype('float32') / 255
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# One-hot encode the labels
-y_train = to_categorical(y_train)
-y_test = to_categorical(y_test)
+model = LogisticRegression()
+model.fit(X_train, y_train)
 
-# Step 2: Build the Neural Network Model
-model = Sequential()
-model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)))
-model.add(MaxPooling2D((2, 2)))
-model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(MaxPooling2D((2, 2)))
-model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(Flatten())
-model.add(Dense(64, activation='relu'))
-model.add(Dense(10, activation='softmax'))
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
 
-# Step 3: Compile and Train the Model
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-model.fit(X_train, y_train, batch_size=128, epochs=10, validation_data=(X_test, y_test))
-
-# Step 4: Evaluate the Model
-loss, accuracy = model.evaluate(X_test, y_test)
-print("Test Loss:", loss)
-print("Test Accuracy:", accuracy)
-
-# Step 5: Make Predictions
-predictions = model.predict(X_test[:10])
-predicted_labels = np.argmax(predictions, axis=1)
-print("Predicted Labels:", predicted_labels)
+new_data = pd.DataFrame({
+    'socio_economic_status': ['high'],
+    'age': [30],
+    'gender': ['female']
+})
+new_data_pred = model.predict(new_data)
+print("Prediction for new data:", new_data_pred)
